@@ -152,12 +152,19 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     mutation_probability = PROBS["mutation"]
     mutation_probabilityInverse = 1.0 - mutation_probability
 
-    names = list(people.keys())
-    print("names = ", names)
-
     print("people = ", people)
-    print("aaa")
 
+    prob_unconditional_2 = PROBS["gene"][2]
+    prob_unconditional_1 = PROBS["gene"][1]
+    prob_unconditional_0 = PROBS["gene"][0]
+
+    probs_2_true = PROBS["trait"][2][True]
+    probs_2_false = PROBS["trait"][2][False]
+    probs_1_true = PROBS["trait"][1][True]
+    probs_1_false = PROBS["trait"][1][False]
+    probs_0_true = PROBS["trait"][0][True]
+    probs_0_false = PROBS["trait"][0][False]
+    
     for person in people:
         name = people[person]["name"]
         mother = people[person]["mother"]
@@ -165,8 +172,24 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         gene_count = count_gene(name, one_gene, two_genes)
 
         print("name: ", name, " mother: ", mother, " father: ", father, " gene_count: ", gene_count)
+        if mother and father:
+            print("both mother and father")
+
+
+        else:
+            print("no parents!")
+            if gene_count == 2:
+                prob = prob_unconditional_2
+            elif gene_count == 1:
+                prob = prob_unconditional_1
+            else:
+                prob = prob_unconditional_0
+            print("no parents and ", gene_count, " genes, we have ", prob * 100, " chanc...")
+
+
+
     
-    #gene_count = count_gene()
+    
 
     print("we be moving on")
 
