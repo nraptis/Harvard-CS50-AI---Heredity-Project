@@ -72,17 +72,13 @@ def main():
         if fails_evidence:
             continue
 
-        print("powerset(names) = ", powerset(names))
-        
         # Loop over all sets of people who might have the gene
         for one_gene in powerset(names):
             for two_genes in powerset(names - one_gene):
-                
                 # Update probabilities with new joint probability
                 p = joint_probability(people, one_gene, two_genes, have_trait)
-                #update(probabilities, one_gene, two_genes, have_trait, p)
-
-
+                update(probabilities, one_gene, two_genes, have_trait, p)
+    
     # Ensure probabilities sum to 1
     normalize(probabilities)
 
@@ -150,9 +146,7 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     """
 
     mutation_probability = PROBS["mutation"]
-    mutation_probabilityInverse = 1.0 - mutation_probability
-
-    print("people = ", people)
+    mutation_probability_inverse = 1.0 - mutation_probability
 
     prob_unconditional_2 = PROBS["gene"][2]
     prob_unconditional_1 = PROBS["gene"][1]
@@ -164,6 +158,8 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     probs_1_false = PROBS["trait"][1][False]
     probs_0_true = PROBS["trait"][0][True]
     probs_0_false = PROBS["trait"][0][False]
+
+    result = 1.0
     
     for person in people:
         name = people[person]["name"]
@@ -171,30 +167,79 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         father = people[person]["father"]
         gene_count = count_gene(name, one_gene, two_genes)
 
-        print("name: ", name, " mother: ", mother, " father: ", father, " gene_count: ", gene_count)
         if mother and father:
-            print("both mother and father")
 
+            mother_gene_count = count_gene(mother, one_gene, two_genes)
+            father_gene_count = count_gene(mother, one_gene, two_genes)
+
+            if mother_gene_count >= 2:
+                #If a parent has two copies of the mutated gene, then they will pass the mutated gene on to the child;
+                mother_prob = 1.0
+            elif mother_gene_count == 1:
+                #and if a parent has one copy of the mutated gene, then the gene is passed on to the child with probability 0.5.
+                mother_prob = 0.5
+            else:
+                #if a parent has no copies of the mutated gene, then they will not pass the mutated gene on to the child;
+                mother_prob = 0.0
+
+            if father_gene_count >= 2:
+                #If a parent has two copies of the mutated gene, then they will pass the mutated gene on to the child;
+                father_prob = 1.0
+            elif father_gene_count == 1:
+                #and if a parent has one copy of the mutated gene, then the gene is passed on to the child with probability 0.5.
+                father_prob = 0.5
+            else:
+                #if a parent has no copies of the mutated gene, then they will not pass the mutated gene on to the child;
+                father_prob = 0.0
+
+            mother_prob_inverse = (1.0 - mother_prob)
+            father_prob_inverse = (1.0 - father_prob)
+
+            father_yes_pass_not_mutate_prob = father_prob * mutation_probability_inverse
+            father_yes_pass_yes_mutate_prob = father_prob * mutation_probability
+            father_not_pass_not_mutate_prob = father_prob_inverse * mutation_probability_inverse
+            father_not_pass_yes_mutate_prob = father_prob_inverse * mutation_probability
+            
+            mother_yes_pass_not_mutate_prob = mother_prob * mutation_probability_inverse
+            mother_yes_pass_yes_mutate_prob = mother_prob * mutation_probability
+            mother_not_pass_not_mutate_prob = mother_prob_inverse * mutation_probability_inverse
+            mother_not_pass_yes_mutate_prob = mother_prob_inverse * mutation_probability
+
+            if gene_count <= 0:
+                prob = father_not_pass_not_mutate_prob * mother_not_pass_not_mutate_prob \
+                + father_not_pass_not_mutate_prob * mother_yes_pass_yes_mutate_prob \
+                + father_yes_pass_yes_mutate_prob * mother_not_pass_not_mutate_prob \
+                + father_yes_pass_yes_mutate_prob * mother_yes_pass_yes_mutate_prob
+                result *= prob
+
+            elif gene_count == 1:
+                prob = father_not_pass_not_mutate_prob * mother_not_pass_yes_mutate_prob \
+                + father_not_pass_not_mutate_prob * mother_yes_pass_not_mutate_prob \
+                + father_yes_pass_yes_mutate_prob * mother_not_pass_yes_mutate_prob \
+                + father_yes_pass_yes_mutate_prob * mother_yes_pass_not_mutate_prob \
+                + father_yes_pass_not_mutate_prob * mother_not_pass_not_mutate_prob \
+                + father_yes_pass_not_mutate_prob * mother_yes_pass_yes_mutate_prob \
+                + father_not_pass_yes_mutate_prob * mother_not_pass_not_mutate_prob \
+                + father_not_pass_yes_mutate_prob * mother_yes_pass_yes_mutate_prob
+                result *= prob
+
+            else:
+                prob = father_not_pass_yes_mutate_prob * mother_not_pass_yes_mutate_prob \
+                + father_yes_pass_not_mutate_prob * mother_not_pass_yes_mutate_prob \
+                + father_not_pass_yes_mutate_prob * mother_yes_pass_not_mutate_prob \
+                + father_yes_pass_not_mutate_prob * mother_yes_pass_not_mutate_prob
+                result *= prob
 
         else:
-            print("no parents!")
-            if gene_count == 2:
+            if gene_count >= 2:
                 prob = prob_unconditional_2
             elif gene_count == 1:
                 prob = prob_unconditional_1
             else:
                 prob = prob_unconditional_0
-            print("no parents and ", gene_count, " genes, we have ", prob * 100, " chanc...")
+            result *= prob
 
-
-
-    
-    
-
-    print("we be moving on")
-
-
-    #people
+    return result
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
@@ -204,15 +249,43 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
 
+    for person in probabilities:
+        if person in two_genes:
+            probabilities[person]["gene"][2] += p
+        elif person in one_gene:
+            probabilities[person]["gene"][1] += p
+        else:
+            probabilities[person]["gene"][0] += p
+
+        if person in have_trait:
+            probabilities[person]["trait"][True] += p
+        else:
+            probabilities[person]["trait"][False] += p
 
 def normalize(probabilities):
     """
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
+    for person in probabilities:
+        sum_genes = probabilities[person]["gene"][0] + probabilities[person]["gene"][1] + probabilities[person]["gene"][2]
+        if sum_genes > 0.001:
+            probabilities[person]["gene"][0] /= sum_genes
+            probabilities[person]["gene"][1] /= sum_genes
+            probabilities[person]["gene"][2] /= sum_genes
+        
+        sum_traits = probabilities[person]["trait"][False] + probabilities[person]["trait"][True]
+        if sum_traits > 0.001:
+            probabilities[person]["trait"][False] /= sum_traits
+            probabilities[person]["trait"][True] /= sum_traits
+            
+        
+        print("sum_genes = ", sum_genes)
+        print("sum_traits = ", sum_traits)
+        
+
+
 
 
 if __name__ == "__main__":
