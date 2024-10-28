@@ -269,6 +269,7 @@ def normalize(probabilities):
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
     for person in probabilities:
+        
         sum_genes = probabilities[person]["gene"][0] + probabilities[person]["gene"][1] + probabilities[person]["gene"][2]
         if sum_genes > 0.001:
             probabilities[person]["gene"][0] /= sum_genes
@@ -279,14 +280,6 @@ def normalize(probabilities):
         if sum_traits > 0.001:
             probabilities[person]["trait"][False] /= sum_traits
             probabilities[person]["trait"][True] /= sum_traits
-            
-        
-        print("sum_genes = ", sum_genes)
-        print("sum_traits = ", sum_traits)
-        
-
-
-
 
 if __name__ == "__main__":
     main()
