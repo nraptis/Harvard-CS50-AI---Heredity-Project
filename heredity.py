@@ -43,6 +43,9 @@ def main():
         sys.exit("Usage: python heredity.py data.csv")
     people = load_data(sys.argv[1])
 
+    print(people)
+
+
     # Keep track of gene and trait probabilities for each person
     probabilities = {
         person: {
@@ -58,6 +61,12 @@ def main():
         }
         for person in people
     }
+    print("Here co es the ait plane")
+    for key in probabilities.keys():
+        print("key = ",  key)
+        print(probabilities[key])
+    print("done")
+    print(probabilities)
 
     # Loop over all sets of people who might have the trait
     names = set(people)
@@ -113,7 +122,6 @@ def load_data(filename):
             }
     return data
 
-
 def powerset(s):
     """
     Return a list of all possible subsets of set s.
@@ -125,13 +133,8 @@ def powerset(s):
         )
     ]
 
-def count_gene(name, one_gene, two_genes):
-    if name in two_genes:
-        return 2
-    elif name in one_gene:
-        return 1
-    else:
-        return 0
+
+
 
 def joint_probability(people, one_gene, two_genes, have_trait):
     """
@@ -145,22 +148,85 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone not in set` have_trait` does not have the trait.
     """
 
-    mutation_probability = PROBS["mutation"]
-    mutation_probability_inverse = 1.0 - mutation_probability
-
-    prob_unconditional_2 = PROBS["gene"][2]
-    prob_unconditional_1 = PROBS["gene"][1]
-    prob_unconditional_0 = PROBS["gene"][0]
-
-    probs_2_true = PROBS["trait"][2][True]
-    probs_2_false = PROBS["trait"][2][False]
-    probs_1_true = PROBS["trait"][1][True]
-    probs_1_false = PROBS["trait"][1][False]
-    probs_0_true = PROBS["trait"][0][True]
-    probs_0_false = PROBS["trait"][0][False]
-
-    result = 1.0
+    # if a parent has two copies of the mutated gene, then they will pass the mutated 
+    # gene on to the child; if a parent has no copies of the mutated gene, then they 
+    # will not pass the mutated gene on to the child; and if a parent has one copy of 
+    # the mutated gene, then the gene is passed on to the child with probability 0.5. 
     
+    # After a gene is passed on, though, it has some probability of undergoing additional 
+    # mutation: changing from a version of the gene that causes hearing impairment to a 
+    # version that doesn’t, or vice versa.
+
+
+    list_of_probabilities = list()
+
+    for person in people:
+
+        mother = people[person]["mother"]
+        father = people[person]["father"]
+
+        print("Person: ", person, " Mother = ", mother, " and Father = ", father)
+
+        
+        if mother in one_gene:
+            mother_pass_probability = 0.5
+        elif mother in two_genes:
+            mother_pass_probability = 1.0 - PROBS["mutation"]
+        else:
+            mother_pass_probability = PROBS["mutation"]
+
+        father_pass_probability = 0.0
+        if father in one_gene:
+            father_pass_probability = 0.5
+        elif father in two_genes:
+            father_pass_probability = 1.0 - PROBS["mutation"]
+        else:
+            father_pass_probability = PROBS["mutation"]
+
+        print("mother_pass_probability = ", mother_pass_probability, " and father_pass_probability = ", father_pass_probability)
+
+        if person in two_genes:
+            if person in have_trait:
+                list_of_probabilities.append(PROBS["trait"][2][True])
+            else:
+                list_of_probabilities.append(PROBS["trait"][2][False])
+
+            if mother and father:
+                list_of_probabilities.append(mother_pass_probability * father_pass_probability)
+            else:
+                list_of_probabilities.append(PROBS["gene"][2])
+
+        elif person in one_gene:
+            if person in have_trait:
+                list_of_probabilities.append(PROBS["trait"][1][True])
+            else:
+                list_of_probabilities.append(PROBS["trait"][1][False])
+
+            if mother and father:
+                list_of_probabilities.append((1.0 - mother_pass_probability) * father_pass_probability + mother_pass_probability * (1.0 - father_pass_probability))
+            else:
+                list_of_probabilities.append(PROBS["gene"][1])
+                
+
+        else:
+            if person in have_trait:
+                list_of_probabilities.append(PROBS["trait"][0][True])
+            else:
+                list_of_probabilities.append(PROBS["trait"][0][False])
+
+            if mother and father:
+                list_of_probabilities.append((1.0 - mother_pass_probability) * (1.0 - father_pass_probability))
+            else:
+                list_of_probabilities.append(PROBS["gene"][0])
+                
+    print("list_of_probabilities = ", list_of_probabilities)
+    result = 1.0
+    for probability in list_of_probabilities:
+        result *= probability
+
+    print("ITERATE ABBABA ==> ", result)
+
+    '''
     for person in people:
         name = people[person]["name"]
         mother = people[person]["mother"]
@@ -238,6 +304,7 @@ def joint_probability(people, one_gene, two_genes, have_trait):
             else:
                 prob = prob_unconditional_0
             result *= prob
+    '''
 
     return result
 
