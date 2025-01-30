@@ -61,12 +61,6 @@ def main():
         }
         for person in people
     }
-    print("Here co es the ait plane")
-    for key in probabilities.keys():
-        print("key = ",  key)
-        print(probabilities[key])
-    print("done")
-    print(probabilities)
 
     # Loop over all sets of people who might have the trait
     names = set(people)
@@ -133,9 +127,6 @@ def powerset(s):
         )
     ]
 
-
-
-
 def joint_probability(people, one_gene, two_genes, have_trait):
     """
     Compute and return a joint probability.
@@ -148,25 +139,12 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone not in set` have_trait` does not have the trait.
     """
 
-    # if a parent has two copies of the mutated gene, then they will pass the mutated 
-    # gene on to the child; if a parent has no copies of the mutated gene, then they 
-    # will not pass the mutated gene on to the child; and if a parent has one copy of 
-    # the mutated gene, then the gene is passed on to the child with probability 0.5. 
-    
-    # After a gene is passed on, though, it has some probability of undergoing additional 
-    # mutation: changing from a version of the gene that causes hearing impairment to a 
-    # version that doesn’t, or vice versa.
-
-
     list_of_probabilities = list()
 
     for person in people:
 
         mother = people[person]["mother"]
         father = people[person]["father"]
-
-        print("Person: ", person, " Mother = ", mother, " and Father = ", father)
-
         
         if mother in one_gene:
             mother_pass_probability = 0.5
@@ -182,8 +160,6 @@ def joint_probability(people, one_gene, two_genes, have_trait):
             father_pass_probability = 1.0 - PROBS["mutation"]
         else:
             father_pass_probability = PROBS["mutation"]
-
-        print("mother_pass_probability = ", mother_pass_probability, " and father_pass_probability = ", father_pass_probability)
 
         if person in two_genes:
             if person in have_trait:
@@ -218,93 +194,10 @@ def joint_probability(people, one_gene, two_genes, have_trait):
                 list_of_probabilities.append((1.0 - mother_pass_probability) * (1.0 - father_pass_probability))
             else:
                 list_of_probabilities.append(PROBS["gene"][0])
-                
-    print("list_of_probabilities = ", list_of_probabilities)
+
     result = 1.0
     for probability in list_of_probabilities:
         result *= probability
-
-    print("ITERATE ABBABA ==> ", result)
-
-    '''
-    for person in people:
-        name = people[person]["name"]
-        mother = people[person]["mother"]
-        father = people[person]["father"]
-        gene_count = count_gene(name, one_gene, two_genes)
-
-        if mother and father:
-
-            mother_gene_count = count_gene(mother, one_gene, two_genes)
-            father_gene_count = count_gene(mother, one_gene, two_genes)
-
-            if mother_gene_count >= 2:
-                #If a parent has two copies of the mutated gene, then they will pass the mutated gene on to the child;
-                mother_prob = 1.0
-            elif mother_gene_count == 1:
-                #and if a parent has one copy of the mutated gene, then the gene is passed on to the child with probability 0.5.
-                mother_prob = 0.5
-            else:
-                #if a parent has no copies of the mutated gene, then they will not pass the mutated gene on to the child;
-                mother_prob = 0.0
-
-            if father_gene_count >= 2:
-                #If a parent has two copies of the mutated gene, then they will pass the mutated gene on to the child;
-                father_prob = 1.0
-            elif father_gene_count == 1:
-                #and if a parent has one copy of the mutated gene, then the gene is passed on to the child with probability 0.5.
-                father_prob = 0.5
-            else:
-                #if a parent has no copies of the mutated gene, then they will not pass the mutated gene on to the child;
-                father_prob = 0.0
-
-            mother_prob_inverse = (1.0 - mother_prob)
-            father_prob_inverse = (1.0 - father_prob)
-
-            father_yes_pass_not_mutate_prob = father_prob * mutation_probability_inverse
-            father_yes_pass_yes_mutate_prob = father_prob * mutation_probability
-            father_not_pass_not_mutate_prob = father_prob_inverse * mutation_probability_inverse
-            father_not_pass_yes_mutate_prob = father_prob_inverse * mutation_probability
-            
-            mother_yes_pass_not_mutate_prob = mother_prob * mutation_probability_inverse
-            mother_yes_pass_yes_mutate_prob = mother_prob * mutation_probability
-            mother_not_pass_not_mutate_prob = mother_prob_inverse * mutation_probability_inverse
-            mother_not_pass_yes_mutate_prob = mother_prob_inverse * mutation_probability
-
-            if gene_count <= 0:
-                prob = father_not_pass_not_mutate_prob * mother_not_pass_not_mutate_prob \
-                + father_not_pass_not_mutate_prob * mother_yes_pass_yes_mutate_prob \
-                + father_yes_pass_yes_mutate_prob * mother_not_pass_not_mutate_prob \
-                + father_yes_pass_yes_mutate_prob * mother_yes_pass_yes_mutate_prob
-                result *= prob
-
-            elif gene_count == 1:
-                prob = father_not_pass_not_mutate_prob * mother_not_pass_yes_mutate_prob \
-                + father_not_pass_not_mutate_prob * mother_yes_pass_not_mutate_prob \
-                + father_yes_pass_yes_mutate_prob * mother_not_pass_yes_mutate_prob \
-                + father_yes_pass_yes_mutate_prob * mother_yes_pass_not_mutate_prob \
-                + father_yes_pass_not_mutate_prob * mother_not_pass_not_mutate_prob \
-                + father_yes_pass_not_mutate_prob * mother_yes_pass_yes_mutate_prob \
-                + father_not_pass_yes_mutate_prob * mother_not_pass_not_mutate_prob \
-                + father_not_pass_yes_mutate_prob * mother_yes_pass_yes_mutate_prob
-                result *= prob
-
-            else:
-                prob = father_not_pass_yes_mutate_prob * mother_not_pass_yes_mutate_prob \
-                + father_yes_pass_not_mutate_prob * mother_not_pass_yes_mutate_prob \
-                + father_not_pass_yes_mutate_prob * mother_yes_pass_not_mutate_prob \
-                + father_yes_pass_not_mutate_prob * mother_yes_pass_not_mutate_prob
-                result *= prob
-
-        else:
-            if gene_count >= 2:
-                prob = prob_unconditional_2
-            elif gene_count == 1:
-                prob = prob_unconditional_1
-            else:
-                prob = prob_unconditional_0
-            result *= prob
-    '''
 
     return result
 
