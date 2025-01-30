@@ -43,9 +43,6 @@ def main():
         sys.exit("Usage: python heredity.py data.csv")
     people = load_data(sys.argv[1])
 
-    print(people)
-
-
     # Keep track of gene and trait probabilities for each person
     probabilities = {
         person: {
@@ -93,7 +90,6 @@ def main():
             for value in probabilities[person][field]:
                 p = probabilities[person][field][value]
                 print(f"    {value}: {p:.4f}")
-
 
 def load_data(filename):
     """
@@ -183,7 +179,6 @@ def joint_probability(people, one_gene, two_genes, have_trait):
             else:
                 list_of_probabilities.append(PROBS["gene"][1])
                 
-
         else:
             if person in have_trait:
                 list_of_probabilities.append(PROBS["trait"][0][True])
